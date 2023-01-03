@@ -261,30 +261,42 @@ def readTxtFile(filename, outputFormat="list"):
         return ""
 
 
-def write_str_to_file(str_data, filepathName):
+def write_str_to_file(str_data, filepathName, writemode="rename"):
 
     success_bool = False
     try:
         check_and_create_path(filepathName, autocreate=True)
 
-        filepathName = rename_if_file_exists(filepathName)
+        if writemode == "rename":
+            filepathName = rename_if_file_exists(filepathName)
+            writemode = 'w'
 
-        try:
-            with open(filepathName, 'w') as filehandle:
-                filehandle.write(str_data)
-        except Exception as err:
-            print(err)
-            with open(filepathName, 'a') as filehandle:
-                filehandle.write(str_data)
+        if writemode == 'w':
+            try:
+                with open(filepathName, 'w') as filehandle:
+                    filehandle.write(str_data)
+
+            except Exception as err:
+                print(err)
+                with open(filepathName, 'a') as filehandle:
+                    filehandle.write(str_data)
+        else:
+            try:
+                with open(filepathName, 'a') as filehandle:
+                    filehandle.write(str_data)
+            except Exception as err:
+                with open(filepathName, 'w') as filehandle:
+                    filehandle.write(str_data)
 
         success_bool = True
+
     except Exception as err:
         printLog(f"Failed to write file:\n\n{filepathName}\n\ndue to Exception:\n\n{err}")
 
     return (success_bool, filepathName)
 
 
-def import_txt_file(file_path):
+def import_txt_file(file_path: str) -> list:
     output_list = []
 
     if os.path.exists(file_path):
@@ -420,7 +432,7 @@ def copy_file(srcFile, dstFolder):
 
 def writeListToFile(filename, my_list, write_type='w'):
     def ensure_file_exists(filepath):
-        if not path.exists(filepath):
+        if not os.path.exists(filepath):
             with open(filepath, 'w') as fp:
                 pass
 
@@ -1698,6 +1710,7 @@ def check_in_bounds(value, upper_limit, lower_limit):
     else:
         return True
 
+
 def return_class_type(variable):
     test = f'{type(variable)}'
     test = test.split()
@@ -1715,7 +1728,7 @@ def return_class_type(variable):
 #     return start
 
 
-def find_nth(haystack, needle, nth_occurrence=1, case_insensitive=False):
+def find_nth(haystack: str, needle: str, nth_occurrence=1, case_insensitive=False):
     # searches strings and lists (the haystack) for nth occurrence of the needle.
     # Will convert int and float to string
 
@@ -1776,6 +1789,8 @@ def getTstampSeconds():
     from time import time
 
     return int(time())
+
+
 
 class cache:
     # Used to create a variable cache, to allow for persistent variables outside of
@@ -1918,6 +1933,11 @@ class cache:
 
         filestream.close()
         return variable_content
+
+
+def timestampToDatetime(timestamp: int) -> str:
+    from datetime import datetime
+    return str(datetime.fromtimestamp(timestamp))
 
 
 # Dependent Modules Inlcuded in Python
