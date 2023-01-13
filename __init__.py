@@ -1402,6 +1402,40 @@ class UncertaintyBudget:
         return uncVal
 
 
+def calculateSensorCalFactor(CFstdSensor, DUTmsdPow, STDmsdPow, DUTrho=None, STDrho=None, DUTphase=None, STDphase=None):
+    import math
+    # DUT Cal Factor = CFstdSensor * (DUTmsdPow / STDmsdPow) * (1 - (2 * DUTrho * STDrho * COSINE(DUTphase + STDphase)) + (DUTrho^2 * STDrho^2))
+    # Function will produce cal factor in one of three ways:
+    #
+    # 1: An uncorrected cal factor, with no rho and phase data:
+    # DUT Cal Factor = CFstdSensor * (DUTmsdPow / STDmsdPow)
+    #
+    # 2: A corrected cal factor, using rho data only (in which case, the rho may reflect the phase contributions already)
+    # in any case, the formula is:
+    # DUT Cal Factor = CFstdSensor * (DUTmsdPow / STDmsdPow) * (|1 - (DUTrho * STDrho)|)^2
+    #
+    # 3: A corrected cal factor, using rho and phase data:
+    # DUT Cal Factor = CFstdSensor * (DUTmsdPow / STDmsdPow) * (1 - (2 * DUTrho * STDrho * COSINE(DUTphase + STDphase)) + (DUTrho^2 * STDrho^2))
+    #
+    # The standard cal factor value must be passed-in as a value where 1 = 100%; if the standard CF is greater
+    # than two, the function will assume a percentage was passed-in, and will convert it to a factor of 1
+
+    if CFstdSensor >= 2:
+        CFstdSensor = CFstdSensor * 0.01
+
+    if DUTrho is None or STDrho is None:
+        dutCF = CFstdSensor * (DUTmsdPow / STDmsdPow)
+
+    elif (DUTphase is None or STDphase is None) and (DUTrho is not None and STDrho is not None):
+        dutCF = CFstdSensor * (DUTmsdPow / STDmsdPow) * (abs(1 - (DUTrho * STDrho))) ** 2
+        correction = abs(1 - (DUTrho * STDrho)) ** 2
+        dutCF *= correction
+    else:
+        dutCF = CFstdSensor * (DUTmsdPow / STDmsdPow) * (abs(1 - (DUTrho * STDrho))) ** 2
+        correction = 1 - (2 * DUTrho * STDrho * math.cos(DUTphase + STDphase)) + ((DUTrho ** 2) * (STDrho ** 2))
+        dutCF *= correction
+
+    return dutCF
 
 
 # Comms Functions -----------------------------------
@@ -1789,7 +1823,6 @@ def getTstampSeconds():
     from time import time
 
     return int(time())
-
 
 
 class cache:
